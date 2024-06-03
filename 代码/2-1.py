@@ -1,4 +1,4 @@
 message = "I love You"
 print(message)
 
-oitput:I love You
+输出:I love You
