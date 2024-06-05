@@ -1,5 +1,8 @@
-while True:   
-    user_input = input("请输入一些内容（或按Ctrl+C中断）: ")  
+ while True:  
+    # 自动输出内容  
+    print("这是无限循环的输出")  
       
-    print("你输入了:", user_input)  
+    import time  
+    time.sleep(1)  
+  
   
