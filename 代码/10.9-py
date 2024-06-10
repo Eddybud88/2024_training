@@ -1,0 +1,13 @@
+def read_and_print_file(filename):  
+    try:  
+        with open(filename, 'r', encoding='utf-8') as file:  
+            contents = file.read()  
+            print(f"Contents of {filename}:\n{contents}\n")  
+    except FileNotFoundError:  
+        # 不执行任何操作，所以文件不存在时程序会一言不发  
+        pass  
+  
+# 尝试读取并打印 cats.txt 和 dogs.txt 的内容  
+filenames = ['cats.txt', 'dogs.txt']  
+for filename in filenames:  
+    read_and_print_file(filename)
