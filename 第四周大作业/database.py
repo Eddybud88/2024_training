@@ -1,100 +1,67 @@
 import json
+import mysql.connector
 import os
-from sqlalchemy import create_engine, Column, Integer, String, LargeBinary
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 
-# 数据库连接信息
-DATABASE_URI = 'mysql+mysqlconnector://root:Sherry@localhost/autonomous_driving'
+# 读取 data_info.json 文件
+json_file_path = 'C:\\Users\\admin\\Desktop\\single-vehicle-side-example\\data_info.json'
+with open(json_file_path, 'r', encoding='utf-8') as file:
+    data_info = json.load(file)  # 将 JSON 文件加载为 Python 字典
 
-# 创建 SQLAlchemy 引擎和声明性基类
-engine = create_engine(DATABASE_URI, echo=True)
-Base = declarative_base()
+# 连接到 MySQL 数据库
+try:
+    db = mysql.connector.connect(
+        host="localhost",  # MySQL 服务器地址
+        user="root",  # MySQL 用户名
+        password="Sherry",  # MySQL 用户密码
+        database="autonomous_driving"  # 要连接的数据库名称
+    )
 
-# 定义数据模型
-class DataSet(Base):
-    __tablename__ = 'data_set'
+    cursor = db.cursor()  # 创建一个游标对象，用于执行 SQL 查询
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    image_path = Column(String(255))
-    image_timestamp = Column(String(255))
-    pointcloud_path = Column(String(255))
-    point_cloud_stamp = Column(String(255))
-    calib_camera_intrinsic_path = Column(String(255))
-    calib_lidar_to_camera_path = Column(String(255))
-    label_camera_std_path = Column(String(255))
-    label_lidar_std_path = Column(String(255))
-    image_content = Column(LargeBinary)
-    pointcloud_content = Column(LargeBinary)
-    calib_camera_intrinsic_content = Column(LargeBinary)
-    calib_lidar_to_camera_content = Column(LargeBinary)
-    label_camera_std_content = Column(LargeBinary)
-    label_lidar_std_content = Column(LargeBinary)
+    # 创建数据表，如果数据表不存在则创建
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS data_table (
+        id INT AUTO_INCREMENT PRIMARY KEY,  # 自动递增的主键
+        file_path VARCHAR(255),             # 文件路径
+        content LONGTEXT,                   # 文本文件内容
+        file_size BIGINT                    # 二进制文件大小
+    )
+    """)
 
-# 函数：创建数据库表格
-def create_tables():
-    Base.metadata.create_all(engine)
+    # 定义文件类型列表
+    text_extensions = ['.json', '.txt']
+    binary_extensions = ['.pcd', '.jpg', '.png', '.bin', '.dat']
 
-# 函数：读取文件内容
-def read_file_content(file_path):
-    try:
-        with open(file_path, 'rb') as f:
-            return f.read()
-    except Exception as e:
-        print(f"Error reading {file_path}: {e}")
-        return None
+    # 处理 data_info 中的每个文件
+    for item in data_info:
+        for key, file_path in item.items():
+            if os.path.exists(file_path):  # 检查文件是否存在
+                file_type = os.path.splitext(file_path)[-1]
 
-# 函数：加载 JSON 数据
-def load_json_data(file_path):
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception as e:
-        print(f"Error loading JSON from {file_path}: {e}")
-        return None
+                # 初始化变量以防在数据插入时未定义
+                content = None
+                file_size = None
 
-# 函数：插入数据到数据库
-def insert_data(session, data_info):
-    for data_dict in data_info['files']:
-        new_data = DataSet(
-            image_path=data_dict.get('image_path'),
-            image_timestamp=data_dict.get('image_timestamp'),
-            pointcloud_path=data_dict.get('pointcloud_path'),
-            point_cloud_stamp=data_dict.get('point_cloud_stamp'),
-            calib_camera_intrinsic_path=data_dict.get('calib_camera_intrinsic_path'),
-            calib_lidar_to_camera_path=data_dict.get('calib_lidar_to_camera_path'),
-            label_camera_std_path=data_dict.get('label_camera_std_path'),
-            label_lidar_std_path=data_dict.get('label_lidar_std_path'),
-            image_content=read_file_content(data_dict.get('image_path')),
-            pointcloud_content=read_file_content(data_dict.get('pointcloud_path')),
-            calib_camera_intrinsic_content=read_file_content(data_dict.get('calib_camera_intrinsic_path')),
-            calib_lidar_to_camera_content=read_file_content(data_dict.get('calib_lidar_to_camera_path')),
-            label_camera_std_content=read_file_content(data_dict.get('label_camera_std_path')),
-            label_lidar_std_content=read_file_content(data_dict.get('label_lidar_std_path')),
-        )
-        session.add(new_data)
+                try:
+                    # 如果文件是文本文件
+                    if file_type in text_extensions:
+                        with open(file_path, 'r', encoding='utf-8') as text_file:
+                            content = text_file.read()
 
-# 主函数
-def main():
-    # 创建数据库表格
-    create_tables()
+                    # 如果文件是二进制文件
+                    elif file_type in binary_extensions:
+                        file_size = os.path.getsize(file_path)
 
-    # 加载 JSON 数据
-    json_file_path = 'C:\\Users\\admin\\Desktop\\single-vehicle-side-example\\data_info.json'
-    data_info = load_json_data(json_file_path)
+                    # 将文件路径和相应的文件内容或文件大小插入到数据库中
+                    cursor.execute("""
+                    INSERT INTO data_table (file_path, content, file_size) 
+                    VALUES (%s, %s, %s)
+                    """, (file_path, content, file_size))
 
-    if data_info:
-        Session = sessionmaker(bind=engine)
-        session = Session()
+                    db.commit()  # 提交事务，保存更改
+                except Exception as e:
+                    print(f"Error processing file {file_path}: {e}")
 
-        # 插入数据到数据库
-        insert_data(session, data_info)
+finally:
+    db.close()  # 确保数据库连接在最后关闭
 
-        # 提交更改并关闭会话
-        session.commit()
-        session.close()
-    else:
-        print("Failed to load JSON data.")
-
-if __name__ == "__main__":
-    main()
