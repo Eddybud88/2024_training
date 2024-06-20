@@ -7,7 +7,7 @@ import open3d as o3d
 
 # 加载data_info.json
 def load_data_info(data_info_path):
-    with open(data_info_path, 'r') as f:
+    with open(data_info_path, 'r', encoding='utf-8') as f:
         data_info = json.load(f)
     return data_info
 
@@ -17,7 +17,7 @@ def load_calibration_data(calib_dir):
     for file in os.listdir(calib_dir):
         if file.endswith(".txt"):
             file_path = os.path.join(calib_dir, file)
-            with open(file_path, 'r') as f:
+            with open(file_path, 'r', encoding='utf-8') as f:
                 calib_data[file] = f.read()
     return calib_data
 
@@ -27,7 +27,7 @@ def load_label_data(label_dir):
     for file in os.listdir(label_dir):
         if file.endswith(".txt"):
             file_path = os.path.join(label_dir, file)
-            with open(file_path, 'r') as f:
+            with open(file_path, 'r', encoding='utf-8') as f:
                 label_data[file] = f.read()
     return label_data
 
@@ -51,8 +51,6 @@ def load_velodyne_data(velodyne_dir):
 
 # 清洗和预处理数据
 def preprocess_and_clean_data(data_info, calib_data, label_data, image_data, velodyne_data):
-    # 示例预处理步骤
-    # 根据具体需求进行处理和清洗
     cleaned_data = {
         'data_info': data_info,
         'calib_data': calib_data,
@@ -68,32 +66,44 @@ def save_cleaned_data(cleaned_data, output_dir):
         os.makedirs(output_dir)
     
     # 保存data_info
-    with open(os.path.join(output_dir, 'data_info_cleaned.json'), 'w') as f:
+    with open(os.path.join(output_dir, 'data_info_cleaned.json'), 'w', encoding='utf-8') as f:
         json.dump(cleaned_data['data_info'], f)
     
     # 保存校准数据
+    calib_output_dir = os.path.join(output_dir, 'calib')
+    if not os.path.exists(calib_output_dir):
+        os.makedirs(calib_output_dir)
     for file, data in cleaned_data['calib_data'].items():
-        with open(os.path.join(output_dir, 'calib', file), 'w') as f:
+        with open(os.path.join(calib_output_dir, file), 'w', encoding='utf-8') as f:
             f.write(data)
     
     # 保存标签数据
+    label_output_dir = os.path.join(output_dir, 'label')
+    if not os.path.exists(label_output_dir):
+        os.makedirs(label_output_dir)
     for file, data in cleaned_data['label_data'].items():
-        with open(os.path.join(output_dir, 'label', file), 'w') as f:
+        with open(os.path.join(label_output_dir, file), 'w', encoding='utf-8') as f:
             f.write(data)
     
     # 保存图像数据
+    image_output_dir = os.path.join(output_dir, 'image')
+    if not os.path.exists(image_output_dir):
+        os.makedirs(image_output_dir)
     for file, image in cleaned_data['image_data'].items():
-        image.save(os.path.join(output_dir, 'image', file))
+        image.save(os.path.join(image_output_dir, file))
     
     # 保存雷达点云数据
+    velodyne_output_dir = os.path.join(output_dir, 'velodyne')
+    if not os.path.exists(velodyne_output_dir):
+        os.makedirs(velodyne_output_dir)
     for file, points in cleaned_data['velodyne_data'].items():
-        points.tofile(os.path.join(output_dir, 'velodyne', file))
+        points.tofile(os.path.join(velodyne_output_dir, file))
     
     print(f"清洗后的数据已保存到: {output_dir}")
 
 # 主函数
 def main():
-    data_dir = "single-vehicle-side-example"
+    data_dir = r"C:\Users\admin\Desktop\single-vehicle-side-example"  # 使用原始字符串
     output_dir = "cleaned_data"
     
     # 加载数据
@@ -116,3 +126,4 @@ def main():
 # 运行主函数
 if __name__ == "__main__":
     main()
+
