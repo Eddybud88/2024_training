@@ -12,7 +12,7 @@ Base = declarative_base()
 
 # 定义数据模型类
 class Data(Base):
-    __tablename__ = 'data_set3'
+    __tablename__ = 'data_set'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     image_path = Column(String(255))
@@ -36,10 +36,11 @@ session = Session()
 
 app = FastAPI()
 
+# 用 FastAPI 框架根据图像路径从数据库中获取数据（GET请求端点）
 @app.get("/data/image/{image_path:path}")
 async def get_data_by_image_path(image_path: str):
     print(f"Received request for image path: {image_path}")
-    data = session.query(Data).filter(Data.image_path == image_path).first()
+    data = session.query(Data).filter(Data.image_path == image_path).first()  # 查询数据库
     if data:
         print(f"Found data for image path: {data.image_path}")
         return {
@@ -62,6 +63,7 @@ async def get_data_by_image_path(image_path: str):
         print("Data not found")
         raise HTTPException(status_code=404, detail="Data not found")
 
+# 使用 FastAPI 框架提供了一个用于根据文件路径返回文件的 GET 请求端点
 @app.get("/files/{file_path:path}")
 async def get_file(file_path: str):
     full_path = f"C:\\Users\\admin\\Desktop\\single-vehicle-side-example/{file_path}"
