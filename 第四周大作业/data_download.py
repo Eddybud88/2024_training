@@ -9,7 +9,7 @@ file_url = "https://bj.bcebos.com/apollo-air/v2-2022-01-08/single-vehicle-side-e
 local_filename = "example.zip"
 
 # 下载文件
-with requests.get(file_url, stream=True) as response:
+with requests.get(file_url, stream=True) as response:   # 发送一个GET请求以流的方式下载文件
     response.raise_for_status()  # 检查下载是否成功
     with open(local_filename, 'wb') as f:
         for chunk in response.iter_content(chunk_size=8192):
