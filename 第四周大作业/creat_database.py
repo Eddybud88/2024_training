@@ -15,7 +15,7 @@ Base = declarative_base()
 
 # 定义数据模型类
 class Data(Base):
-    __tablename__ = 'data_set1'
+    __tablename__ = 'data_set'
     id = Column(Integer, primary_key=True, autoincrement=True)  # 首先按照id定义表
 # 定义字符串型变量
     image_path = Column(String(255))
